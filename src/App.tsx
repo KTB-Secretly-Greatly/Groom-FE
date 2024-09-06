@@ -3,6 +3,7 @@ import './App.css';
 import MessageInput from './components/MessageInput';
 import { MessageType } from './types/MessageType';
 import ChatLogs from './components/ChatLogs';
+import NicknameInput from './components/NicknameInput';
 
 function App() {
   const [chatLogs, setChatsLogs] = useState<MessageType[]>([]);
@@ -89,16 +90,7 @@ function App() {
   return (
     <div className="w-screen min-h-screen h-full flex flex-col bg-chat-bg">
       {currentUserNickname == '' ? (
-        <div>
-          <input
-            type="text"
-            placeholder="Enter your nickname"
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-              if (e.key === 'Enter')
-                handleSetNickname((e.target as HTMLInputElement).value);
-            }}
-          />
-        </div>
+        <NicknameInput handleSetNickname={handleSetNickname} />
       ) : (
         <div className="w-full flex-grow relative">
           <ChatLogs
