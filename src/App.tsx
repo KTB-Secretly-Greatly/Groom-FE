@@ -34,17 +34,21 @@ function App() {
       ws.onmessage = event => {
         try {
           const receivedMessage = JSON.parse(event.data);
-          const newChatLog: MessageType = {
-            nickname: receivedMessage.nickname,
-            message: receivedMessage.message,
-            profileImage,
-            timestamp: new Date().toLocaleTimeString('ko-KR', {
-              hour: 'numeric',
-              minute: 'numeric',
-              hour12: true, // 12시간 형식 (오전/오후)
-            }),
-          };
-          setChatsLogs(prevChatLogs => [...prevChatLogs, newChatLog]);
+
+          // message가 있는 경우에만 채팅 로그에 추가
+          if (receivedMessage.message) {
+            const newChatLog: MessageType = {
+              nickname: receivedMessage.nickname,
+              message: receivedMessage.message,
+              profileImage,
+              timestamp: new Date().toLocaleTimeString('ko-KR', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true, // 12시간 형식 (오전/오후)
+              }),
+            };
+            setChatsLogs(prevChatLogs => [...prevChatLogs, newChatLog]);
+          }
         } catch (error) {
           console.error('Failed to parse WebSocket message', error);
         }
