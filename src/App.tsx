@@ -99,14 +99,17 @@ function App() {
     if (participants === 2) {
       // 참가자 수가 2명일 때 게임 시작
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        const newData = {
-          messageType: 'TALK',
-          chatRoomId: 1,
+        const systemMessage: MessageType = {
           nickname: 'System',
           message: '채팅이 시작되었습니다. 자유롭게 대화를 나눠주세요.',
-          profileImage,
+          profileImage: '',
+          timestamp: new Date().toLocaleTimeString('ko-KR', {
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true,
+          }),
         };
-        wsRef.current.send(JSON.stringify(newData));
+        setChatsLogs(prevChatLogs => [...prevChatLogs, systemMessage]);
       }
 
       const timer = setInterval(() => {
