@@ -9,12 +9,13 @@ function App() {
   const [chatLogs, setChatsLogs] = useState<MessageType[]>([]);
   const [currentUserNickname, setCurrentUserNickname] = useState<string>('');
   const [ageGroup, setAgeGroup] = useState<string>('');
+  const [remainingTime, setRemainingTime] = useState<number>(80); // 총 80초
   const wsRef = useRef<WebSocket | null>(null);
   const profileImage =
     'https://mblogthumb-phinf.pstatic.net/MjAyMDExMDFfMTY0/MDAxNjA0MjI4ODc1MDgx.20zY0e0fjnqLYvyFxN2FuZl75yr0p-lejDrTdLzRargg.aDqPo9fsnwOujN45rK3vW-dUi2usn0wBwQE8xmstEBUg.JPEG.gambasg/%EC%9C%A0%ED%8A%9C%EB%B8%8C_%EA%B8%B0%EB%B3%B8%ED%94%84%EB%A1%9C%ED%95%84_%EA%B0%88%EC%83%89.jpg?type=w400';
 
   useEffect(() => {
-    if (currentUserNickname !== '' && ageGroup != '') {
+    if (currentUserNickname !== '' && ageGroup !== '') {
       const ws = new WebSocket('ws://localhost:8080/ws/chat');
       wsRef.current = ws;
 
@@ -26,7 +27,7 @@ function App() {
           nickname: currentUserNickname,
           profileImage,
           ageGroup,
-          message: null, // 메세지 내용은 비워둠
+          message: null,
         };
         ws.send(JSON.stringify(newData));
       };
@@ -39,17 +40,16 @@ function App() {
             const newChatLog: MessageType = {
               nickname: 'System',
               message: `${receivedMessage.nickname}님이 채팅방에 입장했습니다.`,
-              profileImage: '', // 시스템 메시지이므로 이미지 없음
+              profileImage: '',
               timestamp: new Date().toLocaleTimeString('ko-KR', {
                 hour: 'numeric',
                 minute: 'numeric',
-                hour12: true, // 12시간 형식 (오전/오후)
+                hour12: true,
               }),
             };
             setChatsLogs(prevChatLogs => [...prevChatLogs, newChatLog]);
           }
 
-          // message가 있는 경우에만 채팅 로그에 추가
           if (receivedMessage.message) {
             const newChatLog: MessageType = {
               nickname: receivedMessage.nickname,
@@ -58,7 +58,7 @@ function App() {
               timestamp: new Date().toLocaleTimeString('ko-KR', {
                 hour: 'numeric',
                 minute: 'numeric',
-                hour12: true, // 12시간 형식 (오전/오후)
+                hour12: true,
               }),
             };
             setChatsLogs(prevChatLogs => [...prevChatLogs, newChatLog]);
@@ -82,21 +82,82 @@ function App() {
         console.error('WebSocket error', error);
       };
 
-      // cleanup 함수에서 WebSocket 닫기
+      // 타이머 시작
+      const timer = setInterval(() => {
+        setRemainingTime(prev => {
+          const newTime = prev - 1;
+
+          if (newTime <= 0) {
+            clearInterval(timer);
+            if (wsRef.current) {
+              wsRef.current.close();
+            }
+          }
+
+          // 남은 시간이 특정 값일 때만 라운드 메시지를 출력
+          if (newTime === 60) {
+            const msg =
+              '첫 번째 라운드가 시작되었습니다. [취미]를 주제로 얘기해주세요.';
+            const systemMessage: MessageType = {
+              nickname: 'System',
+              message: msg,
+              profileImage: '',
+              timestamp: new Date().toLocaleTimeString('ko-KR', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true,
+              }),
+            };
+            setChatsLogs(prevChatLogs => [...prevChatLogs, systemMessage]);
+          } else if (newTime === 40) {
+            const msg =
+              '두 번째 라운드가 시작되었습니다. [하루일과]를 주제로 얘기해주세요.';
+            const systemMessage: MessageType = {
+              nickname: 'System',
+              message: msg,
+              profileImage: '',
+              timestamp: new Date().toLocaleTimeString('ko-KR', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true,
+              }),
+            };
+            setChatsLogs(prevChatLogs => [...prevChatLogs, systemMessage]);
+          } else if (newTime === 20) {
+            const msg =
+              '마지막 라운드가 시작되었습니다. [음식]을 주제로 얘기해주세요.';
+            const systemMessage: MessageType = {
+              nickname: 'System',
+              message: msg,
+              profileImage: '',
+              timestamp: new Date().toLocaleTimeString('ko-KR', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true,
+              }),
+            };
+            setChatsLogs(prevChatLogs => [...prevChatLogs, systemMessage]);
+          }
+
+          return newTime;
+        });
+      }, 1000); // 1초마다 실행
+
+      // cleanup 함수에서 WebSocket 및 타이머 닫기
       return () => {
+        clearInterval(timer);
         ws.close();
       };
     }
   }, [currentUserNickname, ageGroup]);
 
   const addMessageToChatLogs = (newMessage: string) => {
-    // WebSocket을 통해 서버로 메시지 전송
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       const newData = {
-        messageType: 'TALK', // 서버로 보낼 메시지 타입 설정
-        chatRoomId: 1, // 채팅방 번호
-        nickname: currentUserNickname, // 메시지 전송자의 닉네임
-        message: newMessage, // 메세지 내용
+        messageType: 'TALK',
+        chatRoomId: 1,
+        nickname: currentUserNickname,
+        message: newMessage,
         profileImage,
       };
       wsRef.current.send(JSON.stringify(newData));
@@ -108,9 +169,16 @@ function App() {
     setAgeGroup(ageGroup);
   };
 
+  // 남은 시간을 분:초 형식으로 변환
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   return (
     <div className="w-screen min-h-screen h-full flex flex-col bg-chat-bg">
-      {currentUserNickname == '' ? (
+      {currentUserNickname === '' ? (
         <UserProfileInput handleSetProfile={handleSetProfile} />
       ) : (
         <div className="w-full flex-grow relative">
@@ -122,6 +190,9 @@ function App() {
             <MessageInput
               onSendMessage={message => addMessageToChatLogs(message)}
             />
+          </div>
+          <div className="absolute top-[10px] right-[10px] p-2 bg-[rgba(255,255,255,0.5)] rounded-[4px] text-red-600 font-semibold">
+            {formatTime(remainingTime)}
           </div>
         </div>
       )}
