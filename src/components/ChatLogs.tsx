@@ -1,24 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { MessageType } from '../types/MessageType';
-import { UserType } from '../types/UserType';
 import Message from './Message';
 
 export interface ChatLogsInterface {
   chatLogs: MessageType[];
   currentUserNickname: string;
-  users: UserType[];
 }
 
-const ChatLogs = ({
-  chatLogs,
-  currentUserNickname,
-  users,
-}: ChatLogsInterface) => {
-  const getUserProfileImage = (nickname: string) => {
-    const user = users.find(user => user.nickname === nickname);
-    return user ? user.profileImage : '';
-  };
-
+const ChatLogs = ({ chatLogs, currentUserNickname }: ChatLogsInterface) => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // useEffect to scroll to the bottom whenever chatLogs change
@@ -34,8 +23,8 @@ const ChatLogs = ({
         <Message
           key={index}
           nickname={log.nickname}
-          profileImage={getUserProfileImage(log.nickname)}
-          content={log.content}
+          profileImage={log.profileImage}
+          message={log.message}
           timestamp={log.timestamp}
           isMine={log.nickname === currentUserNickname}
         />

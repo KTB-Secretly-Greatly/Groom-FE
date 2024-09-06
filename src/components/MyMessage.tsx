@@ -1,14 +1,14 @@
 interface MyMessageProps {
   nickname: string;
   profileImage: string;
-  content: string;
+  message: string;
   timestamp: string;
 }
 
 const MyMessage = ({
   nickname,
   profileImage,
-  content,
+  message,
   timestamp,
 }: MyMessageProps) => {
   return (
@@ -23,7 +23,7 @@ const MyMessage = ({
       </div>
       <div className="flex justify-end items-end mb-[10px]">
         <p className="text-[12px] text-timestamp-text mr-[5px]">{timestamp}</p>
-        <p className="p-2 rounded-lg inline-block bg-self-msg-bg">{content}</p>
+        <p className="p-2 rounded-lg inline-block bg-self-msg-bg">{message}</p>
       </div>
     </div>
   );

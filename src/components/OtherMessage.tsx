@@ -1,14 +1,14 @@
 interface OtherMessageProps {
   nickname: string;
   profileImage: string;
-  content: string;
+  message: string;
   timestamp: string;
 }
 
 const OtherMessage = ({
   nickname,
   profileImage,
-  content,
+  message,
   timestamp,
 }: OtherMessageProps) => {
   return (
@@ -23,7 +23,7 @@ const OtherMessage = ({
       </div>
       <p className="text-[14px] mb-[10px] relative">
         <span className="p-2 rounded-lg inline-block bg-white self-start">
-          {content}
+          {message}
         </span>
         <span className="absolute bottom-0 text-[12px] text-timestamp-text ml-[5px]">
           {timestamp}

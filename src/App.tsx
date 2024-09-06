@@ -2,67 +2,39 @@ import { useEffect, useRef, useState } from 'react';
 import './App.css';
 import MessageInput from './components/MessageInput';
 import { MessageType } from './types/MessageType';
-import { UserType } from './types/UserType';
 import ChatLogs from './components/ChatLogs';
 
 function App() {
-  const [users, setUsers] = useState<UserType[]>([
-    {
-      nickname: 'me',
-      profileImage:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRN1MxQpdnaeXnxFs5jCVLMh1XOkC5ZHuksBw&s',
-    },
-    {
-      nickname: 'other1',
-      profileImage:
-        'https://png.pngtree.com/thumb_back/fw800/background/20231219/pngtree-pink-pastel-background-with-pink-aesthetic-sky-image_15522922.png',
-    },
-    {
-      nickname: 'other2',
-      profileImage:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSyRpDYySITeW4scxxiH4VQXGDW78Im0mpVKTrAsd7dEHLSy1DhuMuptFdiw&s',
-    },
-  ]);
-
-  const [chatLogs, setChatsLogs] = useState<MessageType[]>([
-    {
-      nickname: 'me',
-      content: '제가 보낸 메시지입니다.',
-      timestamp: '오후 12:04',
-    },
-    {
-      nickname: 'other1',
-      content: '안녕하세요! 저는 다른 사람입니다.',
-      timestamp: '오후 2:14',
-    },
-    {
-      nickname: 'other2',
-      content: '안녕하세요! 저는 다른 사람입니다.',
-      timestamp: '오후 2:14',
-    },
-    {
-      nickname: 'other1',
-      content: 'ㅎㅇㅎㅇ요',
-      timestamp: '오후 2:14',
-    },
-  ]);
-
-  const currentUserNickname = 'me';
-
+  const [chatLogs, setChatsLogs] = useState<MessageType[]>([]);
+  const [currentUserNickname, setCurrentUserNickname] = useState<string>('');
   const wsRef = useRef<WebSocket | null>(null);
+  const profileImage =
+    'https://mblogthumb-phinf.pstatic.net/MjAyMDExMDFfMTY0/MDAxNjA0MjI4ODc1MDgx.20zY0e0fjnqLYvyFxN2FuZl75yr0p-lejDrTdLzRargg.aDqPo9fsnwOujN45rK3vW-dUi2usn0wBwQE8xmstEBUg.JPEG.gambasg/%EC%9C%A0%ED%8A%9C%EB%B8%8C_%EA%B8%B0%EB%B3%B8%ED%94%84%EB%A1%9C%ED%95%84_%EA%B0%88%EC%83%89.jpg?type=w400';
 
   useEffect(() => {
-    if (currentUserNickname) {
-      wsRef.current = new WebSocket('ws://localhost:8080/chat');
+    if (currentUserNickname !== '') {
+      const ws = new WebSocket('ws://localhost:8080/ws/chat');
+      wsRef.current = ws;
 
-      wsRef.current.onopen = () => console.debug('Connection opened');
+      ws.onopen = () => {
+        console.log('Connection opened');
+        const newData = {
+          messageType: 'ENTER',
+          chatRoomId: 1,
+          nickname: currentUserNickname,
+          profileImage,
+          message: null, // 메세지 내용은 비워둠
+        };
+        ws.send(JSON.stringify(newData));
+      };
 
-      wsRef.current.onmessage = event => {
+      ws.onmessage = event => {
         try {
-          const receivedMessage = JSON.parse(event.data); // JSON으로 파싱
+          const receivedMessage = JSON.parse(event.data);
           const newChatLog: MessageType = {
             nickname: receivedMessage.nickname,
-            content: receivedMessage.content,
+            message: receivedMessage.message,
+            profileImage,
             timestamp: new Date().toLocaleTimeString('ko-KR', {
               hour: 'numeric',
               minute: 'numeric',
@@ -75,65 +47,71 @@ function App() {
         }
       };
 
-      wsRef.current.onclose = event => {
+      ws.onclose = event => {
         if (event.wasClean) {
           console.debug(
-            `[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`,
+            `[close] Connection closed cleanly, code=${event.code}, reason=${event.reason}`,
           );
         } else {
-          console.debug('[close] Connection died');
+          console.debug('[close] Connection died unexpectedly');
         }
       };
 
-      return () => wsRef.current?.close();
-    }
+      ws.onerror = error => {
+        console.error('WebSocket error', error);
+      };
 
-    return undefined;
+      // cleanup 함수에서 WebSocket 닫기
+      return () => {
+        ws.close();
+      };
+    }
   }, [currentUserNickname]);
 
-  const addMessageToChatLogs = (newMessage: string, nickname: string) => {
-    const currentTime = new Date();
-    const newChatLog = {
-      nickname,
-      content: newMessage,
-      timestamp: currentTime.toLocaleTimeString('ko-KR', {
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true, // 12시간 형식 (오전/오후)
-      }),
-    };
-
+  const addMessageToChatLogs = (newMessage: string) => {
     // WebSocket을 통해 서버로 메시지 전송
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       const newData = {
-        messageType: 'TALK', // ENTER, TALK
+        messageType: 'TALK', // 서버로 보낼 메시지 타입 설정
         chatRoomId: 1, // 채팅방 번호
-        senderId: 1, // 메세지 전송자의 UserId
+        nickname: currentUserNickname, // 메시지 전송자의 닉네임
         message: newMessage, // 메세지 내용
+        profileImage,
       };
       wsRef.current.send(JSON.stringify(newData));
     }
+  };
 
-    // 로컬 상태에 메시지 추가
-    setChatsLogs([...chatLogs, newChatLog]);
+  const handleSetNickname = (enteredNickname: string) => {
+    setCurrentUserNickname(enteredNickname);
   };
 
   return (
     <div className="w-screen min-h-screen h-full flex flex-col bg-chat-bg">
-      <div className="w-full flex-grow relative">
-        <ChatLogs
-          chatLogs={chatLogs}
-          currentUserNickname={currentUserNickname}
-          users={users}
-        />
-        <div className="absolute bottom-0 w-full">
-          <MessageInput
-            onSendMessage={message =>
-              addMessageToChatLogs(message, currentUserNickname)
-            }
+      {currentUserNickname == '' ? (
+        <div>
+          <input
+            type="text"
+            placeholder="Enter your nickname"
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+              if (e.key === 'Enter')
+                handleSetNickname((e.target as HTMLInputElement).value);
+            }}
           />
         </div>
-      </div>
+      ) : (
+        <div className="w-full flex-grow relative">
+          <ChatLogs
+            chatLogs={chatLogs}
+            currentUserNickname={currentUserNickname}
+          />
+          <div className="absolute bottom-0 w-full">
+            <MessageInput
+              onSendMessage={message => addMessageToChatLogs(message)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

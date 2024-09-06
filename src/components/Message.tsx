@@ -4,7 +4,7 @@ import MyMessage from './MyMessage';
 interface UserMessageProps {
   nickname: string;
   profileImage: string;
-  content: string;
+  message: string;
   timestamp: string;
   isMine: boolean;
 }
@@ -12,7 +12,7 @@ interface UserMessageProps {
 const Message = ({
   nickname,
   profileImage,
-  content,
+  message,
   timestamp,
   isMine,
 }: UserMessageProps) => {
@@ -22,14 +22,14 @@ const Message = ({
         <MyMessage
           nickname={nickname}
           profileImage={profileImage}
-          content={content}
+          message={message}
           timestamp={timestamp}
         />
       ) : (
         <OtherMessage
           nickname={nickname}
           profileImage={profileImage}
-          content={content}
+          message={message}
           timestamp={timestamp}
         />
       )}
