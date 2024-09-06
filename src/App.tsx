@@ -35,6 +35,20 @@ function App() {
         try {
           const receivedMessage = JSON.parse(event.data);
 
+          if (receivedMessage.messageType === 'ENTER') {
+            const newChatLog: MessageType = {
+              nickname: 'System',
+              message: `${receivedMessage.nickname}님이 채팅방에 입장했습니다.`,
+              profileImage: '', // 시스템 메시지이므로 이미지 없음
+              timestamp: new Date().toLocaleTimeString('ko-KR', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true, // 12시간 형식 (오전/오후)
+              }),
+            };
+            setChatsLogs(prevChatLogs => [...prevChatLogs, newChatLog]);
+          }
+
           // message가 있는 경우에만 채팅 로그에 추가
           if (receivedMessage.message) {
             const newChatLog: MessageType = {
