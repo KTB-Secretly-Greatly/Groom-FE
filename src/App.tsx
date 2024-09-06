@@ -1,28 +1,40 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import MessageInput from './components/MessageInput';
 import { MessageType } from './types/MessageType';
 import ChatLogs from './components/ChatLogs';
 import UserProfileInput from './components/UserProfileInput';
+import GuessAgeGroupModal from './components/GuessAgeGroupModal';
+import { ResultModal } from './components/ResultModal';
+
+export enum AgeGroup {
+  UNDER_40 = 'under40',
+  OVER_40 = 'over40',
+}
 
 function App() {
   const [chatLogs, setChatsLogs] = useState<MessageType[]>([]);
   const [currentUserNickname, setCurrentUserNickname] = useState<string>('');
-  const [ageGroup, setAgeGroup] = useState<string>('');
-  const [remainingTime, setRemainingTime] = useState<number>(80); // 총 80초
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | null>(null);
+  const [remainingTime, setRemainingTime] = useState<number>(5); // 총 80초
   const [participants, setParticipants] = useState<number>(0);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [opponentAgeGroup, setOpponentAgeGroup] = useState<AgeGroup | null>(
+    null,
+  );
+  const [guessResult, setGuessResult] = useState<boolean>(false);
+  const [isShowResultModal, setIsShowResultModal] = useState<boolean>(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const profileImage =
     'https://mblogthumb-phinf.pstatic.net/MjAyMDExMDFfMTY0/MDAxNjA0MjI4ODc1MDgx.20zY0e0fjnqLYvyFxN2FuZl75yr0p-lejDrTdLzRargg.aDqPo9fsnwOujN45rK3vW-dUi2usn0wBwQE8xmstEBUg.JPEG.gambasg/%EC%9C%A0%ED%8A%9C%EB%B8%8C_%EA%B8%B0%EB%B3%B8%ED%94%84%EB%A1%9C%ED%95%84_%EA%B0%88%EC%83%89.jpg?type=w400';
 
   useEffect(() => {
-    if (currentUserNickname !== '' && ageGroup !== '') {
+    if (currentUserNickname !== '' && ageGroup !== null) {
       const ws = new WebSocket('ws://localhost:8080/ws/chat');
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('Connection opened');
         const newData = {
           messageType: 'ENTER',
           chatRoomId: 1,
@@ -57,6 +69,28 @@ function App() {
             }
           }
 
+          // 나이 그룹 관련 정보는 변수에 저장하고 로그에는 추가하지 않음
+          if (
+            receivedMessage.messageType === 'TALK' &&
+            receivedMessage.message.includes('나이 그룹은')
+          ) {
+            const regex = /나이 그룹은 (under40|over40)/;
+            const match = receivedMessage.message.match(regex);
+
+            if (match && match[1]) {
+              const extractedAgeGroup = match[1];
+              if (
+                extractedAgeGroup === AgeGroup.OVER_40 ||
+                extractedAgeGroup === AgeGroup.UNDER_40
+              ) {
+                setOpponentAgeGroup(extractedAgeGroup as AgeGroup);
+              }
+            }
+
+            return;
+          }
+
+          // 다른 일반 메시지는 채팅 로그에 추가
           if (receivedMessage.message) {
             const newChatLog: MessageType = {
               nickname: receivedMessage.nickname,
@@ -69,6 +103,11 @@ function App() {
               }),
             };
             setChatsLogs(prevChatLogs => [...prevChatLogs, newChatLog]);
+          }
+
+          // 참가자 수 업데이트
+          if (receivedMessage.participants) {
+            setParticipants(receivedMessage.participants);
           }
         } catch (error) {
           console.error('Failed to parse WebSocket message', error);
@@ -95,6 +134,15 @@ function App() {
     }
   }, [currentUserNickname, ageGroup]);
 
+  const handleGuessSubmit = (guess: AgeGroup) => {
+    setShowModal(false);
+
+    const correctGuess = guess === opponentAgeGroup;
+    console.log('correctGuess: ', correctGuess);
+    setGuessResult(correctGuess); // 결과 메시지 설정
+    setIsShowResultModal(true);
+  };
+
   useEffect(() => {
     if (participants === 2) {
       // 참가자 수가 2명일 때 게임 시작
@@ -118,6 +166,7 @@ function App() {
 
           if (newTime <= 0) {
             clearInterval(timer);
+            setShowModal(true);
             if (wsRef.current) {
               wsRef.current.close();
             }
@@ -163,7 +212,7 @@ function App() {
     }
   };
 
-  const handleSetProfile = (nickname: string, ageGroup: string) => {
+  const handleSetProfile = (nickname: string, ageGroup: AgeGroup) => {
     setCurrentUserNickname(nickname);
     setAgeGroup(ageGroup);
   };
@@ -195,6 +244,15 @@ function App() {
           </div>
         </div>
       )}
+
+      {showModal && (
+        <GuessAgeGroupModal
+          onSubmit={handleGuessSubmit}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+
+      {isShowResultModal && <ResultModal guessResult={guessResult} />}
     </div>
   );
 }

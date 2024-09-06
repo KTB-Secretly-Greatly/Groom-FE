@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import { AgeGroup } from '../App';
 
 export interface UserProfileInputProps {
-  handleSetProfile: (nickname: string, ageGroup: string) => void;
+  handleSetProfile: (nickname: string, ageGroup: AgeGroup) => void;
 }
 
 const UserProfileInput = ({ handleSetProfile }: UserProfileInputProps) => {
   const [nickname, setNickname] = useState<string>(''); // 닉네임 상태
-  const [ageGroup, setAgeGroup] = useState<string>(''); // 연령대 상태
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>(AgeGroup.OVER_40); // 연령대 상태
   const canSubmitProfile = nickname && ageGroup;
 
   const handleNicknameSubmit = () => {
@@ -40,7 +41,7 @@ const UserProfileInput = ({ handleSetProfile }: UserProfileInputProps) => {
             className={`bg-white border border-gray-300 text-gray-800 w-[48%] p-3 rounded-md hover:bg-blue-100 hover:border-blue-500 transition duration-300 ${
               ageGroup === 'under40' ? 'bg-blue-500 !text-white' : ''
             }`}
-            onClick={() => setAgeGroup('under40')}
+            onClick={() => setAgeGroup(AgeGroup.UNDER_40)}
           >
             40세 미만
           </button>
@@ -48,7 +49,7 @@ const UserProfileInput = ({ handleSetProfile }: UserProfileInputProps) => {
             className={`bg-white border border-gray-300 text-gray-800 w-[48%] p-3 rounded-md hover:bg-blue-100 hover:border-blue-500 transition duration-300 ${
               ageGroup === 'over40' ? 'bg-blue-500 !text-white' : ''
             }`}
-            onClick={() => setAgeGroup('over40')}
+            onClick={() => setAgeGroup(AgeGroup.OVER_40)}
           >
             40세 이상
           </button>
