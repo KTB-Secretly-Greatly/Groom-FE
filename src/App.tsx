@@ -10,6 +10,8 @@ function App() {
   const [currentUserNickname, setCurrentUserNickname] = useState<string>('');
   const [ageGroup, setAgeGroup] = useState<string>('');
   const [remainingTime, setRemainingTime] = useState<number>(80); // 총 80초
+  const [participants, setParticipants] = useState<number>(0);
+
   const wsRef = useRef<WebSocket | null>(null);
   const profileImage =
     'https://mblogthumb-phinf.pstatic.net/MjAyMDExMDFfMTY0/MDAxNjA0MjI4ODc1MDgx.20zY0e0fjnqLYvyFxN2FuZl75yr0p-lejDrTdLzRargg.aDqPo9fsnwOujN45rK3vW-dUi2usn0wBwQE8xmstEBUg.JPEG.gambasg/%EC%9C%A0%ED%8A%9C%EB%B8%8C_%EA%B8%B0%EB%B3%B8%ED%94%84%EB%A1%9C%ED%95%84_%EA%B0%88%EC%83%89.jpg?type=w400';
@@ -48,6 +50,11 @@ function App() {
               }),
             };
             setChatsLogs(prevChatLogs => [...prevChatLogs, newChatLog]);
+
+            // 서버에서 받은 참가자 수로 업데이트
+            if (receivedMessage.participants) {
+              setParticipants(receivedMessage.participants);
+            }
           }
 
           if (receivedMessage.message) {
@@ -82,7 +89,26 @@ function App() {
         console.error('WebSocket error', error);
       };
 
-      // 타이머 시작
+      return () => {
+        ws.close();
+      };
+    }
+  }, [currentUserNickname, ageGroup]);
+
+  useEffect(() => {
+    if (participants === 2) {
+      // 참가자 수가 2명일 때 게임 시작
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        const newData = {
+          messageType: 'TALK',
+          chatRoomId: 1,
+          nickname: 'System',
+          message: '채팅이 시작되었습니다. 자유롭게 대화를 나눠주세요.',
+          profileImage,
+        };
+        wsRef.current.send(JSON.stringify(newData));
+      }
+
       const timer = setInterval(() => {
         setRemainingTime(prev => {
           const newTime = prev - 1;
@@ -94,41 +120,15 @@ function App() {
             }
           }
 
-          // 남은 시간이 특정 값일 때만 라운드 메시지를 출력
-          if (newTime === 60) {
-            const msg =
-              '첫 번째 라운드가 시작되었습니다. [취미]를 주제로 얘기해주세요.';
-            const systemMessage: MessageType = {
-              nickname: 'System',
-              message: msg,
-              profileImage: '',
-              timestamp: new Date().toLocaleTimeString('ko-KR', {
-                hour: 'numeric',
-                minute: 'numeric',
-                hour12: true,
-              }),
+          if (newTime === 60 || newTime === 40 || newTime === 20) {
+            const systemMessages = {
+              60: '첫 번째 라운드가 시작되었습니다. [취미]를 주제로 얘기해주세요.',
+              40: '두 번째 라운드가 시작되었습니다. [하루일과]를 주제로 얘기해주세요.',
+              20: '마지막 라운드가 시작되었습니다. [음식]을 주제로 얘기해주세요.',
             };
-            setChatsLogs(prevChatLogs => [...prevChatLogs, systemMessage]);
-          } else if (newTime === 40) {
-            const msg =
-              '두 번째 라운드가 시작되었습니다. [하루일과]를 주제로 얘기해주세요.';
             const systemMessage: MessageType = {
               nickname: 'System',
-              message: msg,
-              profileImage: '',
-              timestamp: new Date().toLocaleTimeString('ko-KR', {
-                hour: 'numeric',
-                minute: 'numeric',
-                hour12: true,
-              }),
-            };
-            setChatsLogs(prevChatLogs => [...prevChatLogs, systemMessage]);
-          } else if (newTime === 20) {
-            const msg =
-              '마지막 라운드가 시작되었습니다. [음식]을 주제로 얘기해주세요.';
-            const systemMessage: MessageType = {
-              nickname: 'System',
-              message: msg,
+              message: systemMessages[newTime],
               profileImage: '',
               timestamp: new Date().toLocaleTimeString('ko-KR', {
                 hour: 'numeric',
@@ -141,15 +141,11 @@ function App() {
 
           return newTime;
         });
-      }, 1000); // 1초마다 실행
+      }, 1000);
 
-      // cleanup 함수에서 WebSocket 및 타이머 닫기
-      return () => {
-        clearInterval(timer);
-        ws.close();
-      };
+      return () => clearInterval(timer);
     }
-  }, [currentUserNickname, ageGroup]);
+  }, [participants]);
 
   const addMessageToChatLogs = (newMessage: string) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
