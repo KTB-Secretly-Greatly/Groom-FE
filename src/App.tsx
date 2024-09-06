@@ -138,8 +138,7 @@ function App() {
     setShowModal(false);
 
     const correctGuess = guess === opponentAgeGroup;
-    console.log('correctGuess: ', correctGuess);
-    setGuessResult(correctGuess); // 결과 메시지 설정
+    setGuessResult(correctGuess);
     setIsShowResultModal(true);
   };
 
@@ -245,12 +244,7 @@ function App() {
         </div>
       )}
 
-      {showModal && (
-        <GuessAgeGroupModal
-          onSubmit={handleGuessSubmit}
-          onClose={() => setShowModal(false)}
-        />
-      )}
+      {showModal && <GuessAgeGroupModal onSubmit={handleGuessSubmit} />}
 
       {isShowResultModal && <ResultModal guessResult={guessResult} />}
     </div>
