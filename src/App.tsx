@@ -28,25 +28,38 @@ function App() {
     {
       nickname: 'me',
       content: '제가 보낸 메시지입니다.',
+      timestamp: '오후 12:04',
     },
     {
       nickname: 'other1',
       content: '안녕하세요! 저는 다른 사람입니다.',
+      timestamp: '오후 2:14',
     },
     {
       nickname: 'other2',
       content: '안녕하세요! 저는 다른 사람입니다.',
+      timestamp: '오후 2:14',
     },
     {
       nickname: 'other1',
       content: 'ㅎㅇㅎㅇ요',
+      timestamp: '오후 2:14',
     },
   ]);
 
   const currentUserNickname = 'me';
 
   const addMessageToChatLogs = (newMessage: string, nickname: string) => {
-    const newChatLog = { nickname, content: newMessage };
+    const currentTime = new Date();
+    const newChatLog = {
+      nickname,
+      content: newMessage,
+      timestamp: currentTime.toLocaleTimeString('ko-KR', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true, // 12시간 형식 (오전/오후)
+      }),
+    };
     setChatsLogs([...chatLogs, newChatLog]);
   };
 

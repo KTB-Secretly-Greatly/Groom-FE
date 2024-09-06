@@ -36,6 +36,7 @@ const ChatLogs = ({
           nickname={log.nickname}
           profileImage={getUserProfileImage(log.nickname)}
           content={log.content}
+          timestamp={log.timestamp}
           isMine={log.nickname === currentUserNickname}
         />
       ))}
