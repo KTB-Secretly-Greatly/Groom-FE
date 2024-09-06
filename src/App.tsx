@@ -3,17 +3,18 @@ import './App.css';
 import MessageInput from './components/MessageInput';
 import { MessageType } from './types/MessageType';
 import ChatLogs from './components/ChatLogs';
-import NicknameInput from './components/NicknameInput';
+import UserProfileInput from './components/UserProfileInput';
 
 function App() {
   const [chatLogs, setChatsLogs] = useState<MessageType[]>([]);
   const [currentUserNickname, setCurrentUserNickname] = useState<string>('');
+  const [ageGroup, setAgeGroup] = useState<string>('');
   const wsRef = useRef<WebSocket | null>(null);
   const profileImage =
     'https://mblogthumb-phinf.pstatic.net/MjAyMDExMDFfMTY0/MDAxNjA0MjI4ODc1MDgx.20zY0e0fjnqLYvyFxN2FuZl75yr0p-lejDrTdLzRargg.aDqPo9fsnwOujN45rK3vW-dUi2usn0wBwQE8xmstEBUg.JPEG.gambasg/%EC%9C%A0%ED%8A%9C%EB%B8%8C_%EA%B8%B0%EB%B3%B8%ED%94%84%EB%A1%9C%ED%95%84_%EA%B0%88%EC%83%89.jpg?type=w400';
 
   useEffect(() => {
-    if (currentUserNickname !== '') {
+    if (currentUserNickname !== '' && ageGroup != '') {
       const ws = new WebSocket('ws://localhost:8080/ws/chat');
       wsRef.current = ws;
 
@@ -24,6 +25,7 @@ function App() {
           chatRoomId: 1,
           nickname: currentUserNickname,
           profileImage,
+          ageGroup,
           message: null, // 메세지 내용은 비워둠
         };
         ws.send(JSON.stringify(newData));
@@ -67,7 +69,7 @@ function App() {
         ws.close();
       };
     }
-  }, [currentUserNickname]);
+  }, [currentUserNickname, ageGroup]);
 
   const addMessageToChatLogs = (newMessage: string) => {
     // WebSocket을 통해 서버로 메시지 전송
@@ -83,14 +85,15 @@ function App() {
     }
   };
 
-  const handleSetNickname = (enteredNickname: string) => {
-    setCurrentUserNickname(enteredNickname);
+  const handleSetProfile = (nickname: string, ageGroup: string) => {
+    setCurrentUserNickname(nickname);
+    setAgeGroup(ageGroup);
   };
 
   return (
     <div className="w-screen min-h-screen h-full flex flex-col bg-chat-bg">
       {currentUserNickname == '' ? (
-        <NicknameInput handleSetNickname={handleSetNickname} />
+        <UserProfileInput handleSetProfile={handleSetProfile} />
       ) : (
         <div className="w-full flex-grow relative">
           <ChatLogs
