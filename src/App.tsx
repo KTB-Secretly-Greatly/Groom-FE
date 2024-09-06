@@ -16,7 +16,7 @@ function App() {
   const [chatLogs, setChatsLogs] = useState<MessageType[]>([]);
   const [currentUserNickname, setCurrentUserNickname] = useState<string>('');
   const [ageGroup, setAgeGroup] = useState<AgeGroup | null>(null);
-  const [remainingTime, setRemainingTime] = useState<number>(5); // 총 80초
+  const [remainingTime, setRemainingTime] = useState<number>(80); // 총 80초
   const [participants, setParticipants] = useState<number>(0);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [opponentAgeGroup, setOpponentAgeGroup] = useState<AgeGroup | null>(
@@ -238,7 +238,7 @@ function App() {
               onSendMessage={message => addMessageToChatLogs(message)}
             />
           </div>
-          <div className="absolute top-[10px] right-[10px] p-2 bg-[rgba(255,255,255,0.5)] rounded-[4px] text-red-600 font-semibold">
+          <div className="fixed top-[10px] right-[10px] p-2 bg-[rgba(255,255,255,0.5)] rounded-[4px] text-red-600 font-semibold">
             {formatTime(remainingTime)}
           </div>
         </div>
